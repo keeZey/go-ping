@@ -140,9 +140,9 @@ type Pinger struct {
 	ipaddr *net.IPAddr
 	addr   string
 
-	ipv4     bool
-	source   string
-	id       int
+	ipv4   bool
+	source string
+
 	sequence int
 	network  string
 }
@@ -437,17 +437,9 @@ func (p *Pinger) processPacket(recv *packet) error {
 
 	switch pkt := m.Body.(type) {
 	case *icmp.Echo:
-		if pkt.ID == p.id && pkt.Seq == p.sequence {
-			outPkt.Rtt = time.Since(bytesToTime(pkt.Data[:timeSliceLength]))
-			outPkt.Seq = pkt.Seq
-			p.PacketsRecv += 1
-			p.sequence += 1
-			p.rtts = append(p.rtts, outPkt.Rtt)
-			handler := p.OnRecv
-			if handler != nil {
-				handler(outPkt)
-			}
-		}
+		outPkt.Rtt = time.Since(bytesToTime(pkt.Data[:timeSliceLength]))
+		outPkt.Seq = pkt.Seq
+		p.PacketsRecv += 1
 	default:
 		// Very bad, not sure how this can happen
 		return fmt.Errorf("Error, invalid ICMP echo reply. Body type: %T, %s",
@@ -464,7 +456,6 @@ func (p *Pinger) processPacket(recv *packet) error {
 }
 
 func (p *Pinger) sendICMP(conn *icmp.PacketConn) error {
-	p.id = rand.Intn(0xffff)
 	var typ icmp.Type
 	if p.ipv4 {
 		typ = ipv4.ICMPTypeEcho
@@ -484,7 +475,7 @@ func (p *Pinger) sendICMP(conn *icmp.PacketConn) error {
 	bytes, err := (&icmp.Message{
 		Type: typ, Code: 0,
 		Body: &icmp.Echo{
-			ID:   p.id,
+			ID:   rand.Intn(65535),
 			Seq:  p.sequence,
 			Data: t,
 		},
@@ -502,6 +493,7 @@ func (p *Pinger) sendICMP(conn *icmp.PacketConn) error {
 			}
 		}
 		p.PacketsSent += 1
+		p.sequence += 1
 		break
 	}
 	return nil
