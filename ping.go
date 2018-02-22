@@ -315,7 +315,13 @@ func (p *Pinger) run() {
 				fmt.Println("FATAL: ", err.Error())
 			}
 		default:
-			if p.Count > 0 && p.PacketsRecv >= p.Count {
+			if p.Count > 0 && p.PacketsSent >= p.Count {
+				// Recv last packet
+				r := <-recv
+				err := p.processPacket(r)
+				if err != nil {
+					fmt.Println("FATAL: ", err.Error())
+				}
 				close(p.done)
 				wg.Wait()
 				return
@@ -367,8 +373,27 @@ func (p *Pinger) Statistics() *Statistics {
 		for _, rtt := range p.rtts {
 			sumsquares += (rtt - s.AvgRtt) * (rtt - s.AvgRtt)
 		}
-		s.StdDevRtt = time.Duration(math.Sqrt(
-			float64(sumsquares / time.Duration(len(p.rtts)))))
+		var total float64
+		var varience []float64
+		var variencet float64
+
+		for _, result := range p.rtts {
+			total += float64(result)
+		}
+		mean := total / float64(len(p.rtts))
+
+		for _, result := range p.rtts {
+			varience = append(varience, (float64(result)-mean)*(float64(result)-mean))
+		}
+
+		for _, result := range varience {
+			variencet += result
+		}
+
+		std := math.Sqrt(variencet / float64(len(varience)))
+		s.StdDevRtt = time.Duration(std)
+		// s.StdDevRtt = time.Duration(math.Sqrt(
+		// 	float64(sumsquares / time.Duration(len(p.rtts)))))
 	}
 	return &s
 }
