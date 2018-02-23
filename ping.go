@@ -50,6 +50,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
@@ -200,6 +201,10 @@ type Statistics struct {
 	// StdDevRtt is the standard deviation of the round-trip times sent via
 	// this pinger.
 	StdDevRtt time.Duration
+
+	// MedianRtt is the middle point of all the round trip times sent via
+	// this pinger.
+	MedianRtt time.Duration
 }
 
 // SetIPAddr sets the ip address of the target host.
@@ -376,8 +381,10 @@ func (p *Pinger) Statistics() *Statistics {
 		var total float64
 		var varience []float64
 		var variencet float64
+		var RttAsInt []int
 
 		for _, result := range p.rtts {
+			RttAsInt = append(RttAsInt, int(result))
 			total += float64(result)
 		}
 		mean := total / float64(len(p.rtts))
@@ -392,8 +399,10 @@ func (p *Pinger) Statistics() *Statistics {
 
 		std := math.Sqrt(variencet / float64(len(varience)))
 		s.StdDevRtt = time.Duration(std)
-		// s.StdDevRtt = time.Duration(math.Sqrt(
-		// 	float64(sumsquares / time.Duration(len(p.rtts)))))
+
+		sort.Ints(RttAsInt)
+		index := len(RttAsInt) / 2
+		s.MedianRtt = time.Duration(RttAsInt[index])
 	}
 	return &s
 }
