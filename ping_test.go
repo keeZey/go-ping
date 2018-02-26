@@ -153,6 +153,7 @@ func TestStatisticsSunny(t *testing.T) {
 		time.Duration(1000),
 		time.Duration(1000),
 		time.Duration(1000),
+		time.Duration(1000),
 	}
 
 	stats := p.Statistics()
@@ -176,6 +177,10 @@ func TestStatisticsSunny(t *testing.T) {
 	}
 	if stats.StdDevRtt != time.Duration(0) {
 		t.Errorf("Expected %v, got %v", time.Duration(0), stats.StdDevRtt)
+	}
+
+	if stats.MedianRtt != time.Duration(1000) {
+		t.Errorf("Expected %v, got %v", time.Duration(1000), stats.StdDevRtt)
 	}
 }
 
@@ -221,6 +226,10 @@ func TestStatisticsLossy(t *testing.T) {
 	}
 	if stats.StdDevRtt != time.Duration(29603) {
 		t.Errorf("Expected %v, got %v", time.Duration(29603), stats.StdDevRtt)
+	}
+
+	if stats.MedianRtt != time.Duration(1000) {
+		t.Errorf("Expected %v, got %v", time.Duration(1000), stats.StdDevRtt)
 	}
 }
 
