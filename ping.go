@@ -543,6 +543,11 @@ func (p *Pinger) listen(netProto string, source string) *icmp.PacketConn {
 	return conn
 }
 
+// Done closes the pinger
+func (p *Pinger) Done() {
+	close(p.done)
+}
+
 func byteSliceOfSize(n int) []byte {
 	b := make([]byte, n)
 	for i := 0; i < len(b); i++ {
